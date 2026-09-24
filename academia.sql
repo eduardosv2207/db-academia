@@ -80,7 +80,6 @@ CREATE VIEW  vw_modalidades_custo_estimado as
 	ORDER BY valor_ajustado DESC
 ------------------------------------------------------------------------
 -- Q2
-
 	SELECT
 	aluno.nome as nome,
 	aluno.cpf,
@@ -93,3 +92,46 @@ CREATE VIEW  vw_modalidades_custo_estimado as
 	join itens_matricula on itens_matricula.id = matriculas.id
 	join modalidades on itens_matricula.modalidade_id = modalidades.id
 	WHERE matriculas.status = 'Ativa';
+------------------------------------------------------------------------
+-- Q3
+	CREATE  VIEW vw_alunos_vip as
+	SELECT
+	aluno.nome as nome,
+	COUNT(matriculas.id) AS contratos_ativos,
+	  SUM(
+        (itens_matricula.valor_mensal_aplicado * itens_matricula.duracao_meses)
+        + itens_matricula.taxa_adesao) AS valor_total
+	from aluno
+	JOIN matriculas ON matriculas.aluno_id = aluno.id
+	JOIN itens_matricula on itens_matricula.id = aluno.id
+	WHERE matriculas.status = 'Ativa'
+	GROUP BY aluno.id, aluno.nome
+	HAVING SUM(
+    (itens_matricula.valor_mensal_aplicado * itens_matricula.duracao_meses)
+    + itens_matricula.taxa_adesao) > 1000
+------------------------------------------------------------------------
+-- Q4
+	SELECT 
+    modalidades.*,
+    planos.nome AS plano,
+    planos.valor_mensal_base
+	FROM modalidades
+	JOIN planos ON modalidades.plano_id = planos.id
+	WHERE modalidades.capacidade_maxima >= 15
+	AND planos.valor_mensal_base > 100.00
+	AND modalidades.disponivel = TRUE;
+------------------------------------------------------------------------
+-- Q5
+    CREATE VIEW vw_faturamento_medio_plano AS
+    SELECT
+    planos.nome AS plano,
+    SUM(
+        (itens_matricula.valor_mensal_aplicado * itens_matricula.duracao_meses)
+        + itens_matricula.taxa_adesao) AS faturamento_total,
+    AVG(itens_matricula.duracao_meses) AS media_duracao_meses
+    FROM planos
+    JOIN modalidades ON modalidades.plano_id = planos.id
+    JOIN itens_matricula ON itens_matricula.modalidade_id = modalidades.id
+    JOIN matriculas ON itens_matricula.matricula_id = matriculas.id
+    WHERE matriculas.status = 'Ativa'
+    GROUP BY planos.id, planos.nome;
